@@ -1,19 +1,21 @@
 #!/bin/bash
 exec 2>&1
+echo "Preparing TOMCAT_HOME..."
+
+# Create a Tomcat root for this app in the package's service directory
+cp -a {{pkgPathFor "core/tomcat8"}}/tc {{pkg.svc_var_path}}/
+
+echo "Done preparing TOMCAT_HOME"
+
 echo "Seeding Mongo Collection"
-MONGODB_HOME=$(hab pkg path learn/mongodb)
 
 {{~#if bind.database}}
-{{~#each bind.database.members}}
-
-  export MONGOIMPORT_OPTS="--host={{sys.ip}} --port={{cfg.port}}"
-
-{{~/each}}
+  export MONGOIMPORT_OPTS="--host={{bind.database.first.sys.ip}} --port={{bind.database.first.cfg.port}}"
 {{~/if}}
 
 echo "\$MONGOIMPORT_OPTS=$MONGOIMPORT_OPTS"
 
-$(hab pkg path core/mongo-tools)/bin/mongoimport --drop -d demo -c nationalparks --type json --jsonArray --file {{pkg.path}}/national-parks.json ${MONGOIMPORT_OPTS}
+{{pkgPathFor "core/mongo-tools"}}/bin/mongoimport --drop -d demo -c nationalparks --type json --jsonArray --file {{pkg.path}}/national-parks.json ${MONGOIMPORT_OPTS}
 
 
 
